@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Wrench,
   Laptop,
@@ -10,38 +10,13 @@ import {
   ChevronRight,
   ChevronLeft,
   Package,
+  Loader2,
+  AlertCircle,
+  Pencil,
+  Save,
 } from 'lucide-react';
+import supabase from '../utils/supabase';
 import './App.css';
-
-const REPARACIONES_INICIALES = [
-  {
-    id: 1,
-    modelo: 'HP Pavilion',
-    dueño: 'Juan Pérez',
-    sintoma: 'PC muy lenta, no enciende bien',
-    observacion: 'Mucho polvo acumulado',
-    tratamiento: 'Limpieza profunda, cambio pasta térmica',
-    estado: 'recibida',
-  },
-  {
-    id: 2,
-    modelo: 'Dell Inspiron 15',
-    dueño: 'María García',
-    sintoma: 'No arranca Windows',
-    observacion: 'Disco duro con sectores dañados',
-    tratamiento: 'Instalación Windows 10, Office 2021',
-    estado: 'progreso',
-  },
-  {
-    id: 3,
-    modelo: 'Lenovo ThinkPad T480',
-    dueño: 'Carlos López',
-    sintoma: 'Pantalla azul frecuente',
-    observacion: 'RAM defectuosa',
-    tratamiento: 'Reemplazo módulo RAM 8GB',
-    estado: 'finalizada',
-  },
-];
 
 const COLUMNAS = [
   { id: 'recibida', titulo: 'Recibida', cssClass: 'received' },
@@ -53,53 +28,204 @@ const ESTADO_ORDER = ['recibida', 'progreso', 'finalizada'];
 
 const FORM_VACIO = {
   modelo: '',
-  dueño: '',
+  duenio: '',
   sintoma: '',
   observacion: '',
   tratamiento: '',
   estado: 'recibida',
 };
 
+// Helper: convierte un registro de Supabase al formato del frontend
+const fromDB = (row) => ({
+  id: row.id,
+  modelo: row.modelo,
+  duenio: row.duenio,
+  sintoma: row.sintoma,
+  observacion: row.observacion || '',
+  tratamiento: row.tratamiento || '',
+  estado: row.estado,
+  created_at: row.created_at,
+});
+
 function App() {
-  const [reparaciones, setReparaciones] = useState(REPARACIONES_INICIALES);
+  const [reparaciones, setReparaciones] = useState([]);
   const [modalAbierto, setModalAbierto] = useState(false);
   const [formData, setFormData] = useState(FORM_VACIO);
+  const [editandoId, setEditandoId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const eliminarReparacion = (id) => {
-    setReparaciones((prev) => prev.filter((r) => r.id !== id));
-  };
+  // ── Cargar reparaciones al montar ──
+  useEffect(() => {
+    const fetchReparaciones = async () => {
+      setLoading(true);
+      setError(null);
+      const { data, error: fetchError } = await supabase
+        .from('reparaciones')
+        .select('*')
+        .order('created_at', { ascending: true });
 
-  const moverReparacion = (id, direccion) => {
-    setReparaciones((prev) =>
-      prev.map((r) => {
-        if (r.id !== id) return r;
-        const idx = ESTADO_ORDER.indexOf(r.estado);
-        const nuevoIdx = idx + direccion;
-        if (nuevoIdx < 0 || nuevoIdx >= ESTADO_ORDER.length) return r;
-        return { ...r, estado: ESTADO_ORDER[nuevoIdx] };
-      })
-    );
-  };
-
-  const agregarReparacion = (e) => {
-    e.preventDefault();
-    const nueva = {
-      ...formData,
-      id: Date.now(),
+      if (fetchError) {
+        setError('Error al cargar reparaciones: ' + fetchError.message);
+        console.error(fetchError);
+      } else {
+        setReparaciones(data.map(fromDB));
+      }
+      setLoading(false);
     };
-    setReparaciones((prev) => [...prev, nueva]);
+
+    fetchReparaciones();
+  }, []);
+
+  // ── Eliminar ──
+  const eliminarReparacion = async (id) => {
+    const prev = reparaciones;
+    setReparaciones((r) => r.filter((rep) => rep.id !== id));
+
+    const { error: delError } = await supabase
+      .from('reparaciones')
+      .delete()
+      .eq('id', id);
+
+    if (delError) {
+      console.error('Error al eliminar:', delError);
+      setReparaciones(prev); // rollback
+    }
+  };
+
+  // ── Mover (cambiar estado) ──
+  const moverReparacion = async (id, direccion) => {
+    const rep = reparaciones.find((r) => r.id === id);
+    if (!rep) return;
+
+    const idx = ESTADO_ORDER.indexOf(rep.estado);
+    const nuevoIdx = idx + direccion;
+    if (nuevoIdx < 0 || nuevoIdx >= ESTADO_ORDER.length) return;
+
+    const nuevoEstado = ESTADO_ORDER[nuevoIdx];
+    const prev = reparaciones;
+
+    setReparaciones((r) =>
+      r.map((item) =>
+        item.id === id ? { ...item, estado: nuevoEstado } : item
+      )
+    );
+
+    const { error: updError } = await supabase
+      .from('reparaciones')
+      .update({ estado: nuevoEstado })
+      .eq('id', id);
+
+    if (updError) {
+      console.error('Error al mover:', updError);
+      setReparaciones(prev); // rollback
+    }
+  };
+
+  // ── Agregar ──
+  const agregarReparacion = async (e) => {
+    e.preventDefault();
+
+    const nuevo = {
+      modelo: formData.modelo,
+      duenio: formData.duenio,
+      sintoma: formData.sintoma,
+      observacion: formData.observacion,
+      tratamiento: formData.tratamiento,
+      estado: formData.estado,
+    };
+
     setFormData(FORM_VACIO);
     setModalAbierto(false);
+
+    const { data, error: insError } = await supabase
+      .from('reparaciones')
+      .insert(nuevo)
+      .select()
+      .single();
+
+    if (insError) {
+      console.error('Error al agregar:', insError);
+      setError('Error al agregar equipo: ' + insError.message);
+    } else {
+      setReparaciones((prev) => [...prev, fromDB(data)]);
+    }
+  };
+
+  // ── Abrir modal en modo edición ──
+  const abrirEdicion = (rep) => {
+    setEditandoId(rep.id);
+    setFormData({
+      modelo: rep.modelo,
+      duenio: rep.duenio,
+      sintoma: rep.sintoma,
+      observacion: rep.observacion,
+      tratamiento: rep.tratamiento,
+      estado: rep.estado,
+    });
+    setModalAbierto(true);
+  };
+
+  // ── Guardar edición ──
+  const guardarEdicion = async (e) => {
+    e.preventDefault();
+
+    const campos = {
+      modelo: formData.modelo,
+      duenio: formData.duenio,
+      sintoma: formData.sintoma,
+      observacion: formData.observacion,
+      tratamiento: formData.tratamiento,
+      estado: formData.estado,
+    };
+
+    const prev = reparaciones;
+    setReparaciones((r) =>
+      r.map((item) =>
+        item.id === editandoId ? { ...item, ...campos } : item
+      )
+    );
+    setFormData(FORM_VACIO);
+    setEditandoId(null);
+    setModalAbierto(false);
+
+    const { error: updError } = await supabase
+      .from('reparaciones')
+      .update(campos)
+      .eq('id', editandoId);
+
+    if (updError) {
+      console.error('Error al editar:', updError);
+      setError('Error al editar equipo: ' + updError.message);
+      setReparaciones(prev); // rollback
+    }
   };
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const cerrarModal = () => {
+    setModalAbierto(false);
+    setEditandoId(null);
+    setFormData(FORM_VACIO);
+  };
+
   const totalEquipos = reparaciones.length;
 
   return (
     <div className="app-container">
+      {/* ===== ERROR BANNER ===== */}
+      {error && (
+        <div className="error-banner">
+          <AlertCircle size={18} />
+          <span>{error}</span>
+          <button className="error-dismiss" onClick={() => setError(null)}>
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
       {/* ===== HEADER ===== */}
       <header className="app-header">
         <div className="header-left">
@@ -130,8 +256,16 @@ function App() {
         </div>
       </header>
 
+      {/* ===== LOADING STATE ===== */}
+      {loading && (
+        <div className="loading-state">
+          <Loader2 size={40} className="loading-spinner" />
+          <p>Cargando reparaciones...</p>
+        </div>
+      )}
+
       {/* ===== KANBAN BOARD ===== */}
-      <main className="kanban-board">
+      {!loading && <main className="kanban-board">
         {COLUMNAS.map((col) => {
           const colReparaciones = reparaciones.filter(
             (r) => r.estado === col.id
@@ -182,6 +316,13 @@ function App() {
                           </button>
                         )}
                         <button
+                          className="card-btn card-btn--edit"
+                          onClick={() => abrirEdicion(rep)}
+                          title="Editar equipo"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <button
                           className="card-btn card-btn--delete"
                           onClick={() => eliminarReparacion(rep.id)}
                           title="Eliminar equipo"
@@ -198,7 +339,7 @@ function App() {
                           <User size={12} />
                           <span>Dueño</span>
                         </div>
-                        <p className="card-field-value">{rep.dueño}</p>
+                        <p className="card-field-value">{rep.duenio}</p>
                       </div>
                       <div className="card-field">
                         <div className="card-field-label">
@@ -235,12 +376,16 @@ function App() {
             </div>
           );
         })}
-      </main>
+      </main>}
 
       {/* ===== FAB ===== */}
       <button
         className="fab"
-        onClick={() => setModalAbierto(true)}
+        onClick={() => {
+          setEditandoId(null);
+          setFormData(FORM_VACIO);
+          setModalAbierto(true);
+        }}
         title="Agregar nuevo equipo"
         id="add-pc-button"
       >
@@ -252,21 +397,23 @@ function App() {
         <div
           className="modal-overlay"
           onClick={(e) => {
-            if (e.target === e.currentTarget) setModalAbierto(false);
+            if (e.target === e.currentTarget) cerrarModal();
           }}
         >
           <div className="modal">
             <div className="modal-header">
-              <h2 className="modal-title">Agregar Nuevo Equipo</h2>
+              <h2 className="modal-title">
+                {editandoId ? 'Editar Equipo' : 'Agregar Nuevo Equipo'}
+              </h2>
               <button
                 className="modal-close"
-                onClick={() => setModalAbierto(false)}
+                onClick={cerrarModal}
               >
                 <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={agregarReparacion}>
+            <form onSubmit={editandoId ? guardarEdicion : agregarReparacion}>
               <div className="form-group">
                 <label className="form-label">Modelo</label>
                 <input
@@ -285,8 +432,8 @@ function App() {
                   className="form-input"
                   type="text"
                   placeholder="Nombre del propietario"
-                  value={formData.dueño}
-                  onChange={(e) => handleInputChange('dueño', e.target.value)}
+                  value={formData.duenio}
+                  onChange={(e) => handleInputChange('duenio', e.target.value)}
                   required
                 />
               </div>
@@ -327,7 +474,9 @@ function App() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Estado Inicial</label>
+                <label className="form-label">
+                  {editandoId ? 'Estado' : 'Estado Inicial'}
+                </label>
                 <select
                   className="form-select"
                   value={formData.estado}
@@ -343,13 +492,16 @@ function App() {
                 <button
                   type="button"
                   className="btn btn-secondary"
-                  onClick={() => setModalAbierto(false)}
+                  onClick={cerrarModal}
                 >
                   Cancelar
                 </button>
                 <button type="submit" className="btn btn-primary">
-                  <Plus size={18} />
-                  Agregar
+                  {editandoId ? (
+                    <><Save size={18} /> Guardar</>
+                  ) : (
+                    <><Plus size={18} /> Agregar</>
+                  )}
                 </button>
               </div>
             </form>
