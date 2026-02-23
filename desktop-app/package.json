@@ -1,0 +1,104 @@
+{
+  "name": "pc-repair-desktop",
+  "productName": "Gestión de Reparaciones",
+  "private": true,
+  "author": {
+    "name": "Julian",
+    "email": "2221439@ucc.edu.ar"
+  },
+  "homepage": "https://github.com/RieraJ/pc-repair-management",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "vite:dev": "vite",
+    "electron:dev": "wait-on tcp:5173 && cross-env NODE_ENV=development electron . --no-sandbox",
+    "dev": "concurrently -k -n VITE,ELECTRON -c cyan,yellow \"npm run vite:dev\" \"npm run electron:dev\"",
+    "build": "vite build",
+    "start": "electron . --no-sandbox",
+    "postinstall": "electron-builder install-app-deps",
+    "rebuild": "electron-rebuild -f -w better-sqlite3",
+    "package:linux": "npm run build && npm run rebuild && electron-builder --linux",
+    "package:win": "npm run build && npm run rebuild && electron-builder --win"
+  },
+  "build": {
+    "appId": "com.julian.pc-repair",
+    "productName": "Gestión de Reparaciones",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "**/better-sqlite3/**",
+      "**/*.node"
+    ],
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Utility",
+      "executableArgs": [
+        "--no-sandbox",
+        "--ozone-platform-hint=auto"
+      ],
+      "desktop": {
+        "exec": "\"/opt/Gestión de Reparaciones/pc-repair-desktop\" --no-sandbox %U"
+      }
+    },
+    "deb": {
+      "afterInstall": "build/postinst.sh"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "public/vite.svg"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "public/vite.svg",
+      "shortcutName": "PC Repair"
+    }
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.97.0",
+    "@tailwindcss/postcss": "^4.2.0",
+    "@tailwindcss/vite": "^4.2.0",
+    "better-sqlite3": "^12.6.2",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^3.7.1",
+    "@eslint/js": "^9.39.1",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "autoprefixer": "^10.4.24",
+    "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3",
+    "electron": "^40.6.0",
+    "electron-builder": "^25.1.8",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.5.0",
+    "lucide-react": "^0.575.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.2.0",
+    "vite": "^7.3.1",
+    "wait-on": "^8.0.3"
+  }
+}
