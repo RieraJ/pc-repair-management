@@ -21,6 +21,7 @@ function createWindow() {
         minWidth: 800,
         minHeight: 600,
         title: 'Gestión de Reparaciones',
+        icon: path.join(__dirname, '../build/icon.png'),
         webPreferences: {
             preload: path.join(__dirname, 'preload.cjs'),
             contextIsolation: true,
