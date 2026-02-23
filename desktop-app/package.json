@@ -31,7 +31,9 @@
       "dist/**/*",
       "electron/**/*",
       "node_modules/**/*",
-      "package.json"
+      "package.json",
+      "build/icon.png",
+      "build/icon.ico"
     ],
     "asarUnpack": [
       "**/better-sqlite3/**",
@@ -43,6 +45,7 @@
         "deb"
       ],
       "category": "Utility",
+      "icon": "build/icon.png",
       "executableArgs": [
         "--no-sandbox",
         "--ozone-platform-hint=auto"
@@ -63,12 +66,12 @@
           ]
         }
       ],
-      "icon": "public/vite.svg"
+      "icon": "build/icon.ico"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "installerIcon": "public/vite.svg",
+      "installerIcon": "build/icon.ico",
       "shortcutName": "PC Repair"
     }
   },
