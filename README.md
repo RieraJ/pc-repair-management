@@ -1,44 +1,68 @@
-# PC Repair Management
+# Gestión de Reparaciones - Desktop App
 
 ## ¿En qué consiste la aplicación?
-Es una aplicación web diseñada para la **gestión de reparaciones de computadoras**. Permite a los técnicos y administradores llevar un registro organizado del estado de cada equipo ingresado al taller. 
+Es una aplicación **nativa de escritorio** diseñada para la **gestión de reparaciones de computadoras**. Permite a los técnicos y administradores llevar un registro organizado del estado de cada equipo ingresado al taller, funcionando 100% de manera local y offline (sin necesidad de internet).
+
 A través de una interfaz interactiva tipo tablero Kanban, los usuarios pueden:
 - Añadir nuevas computadoras al sistema de gestión.
-- Cambiar el estado de la reparación (Recibido, En Progreso, Completado).
-- Mantener un control claro del flujo de trabajo de las reparaciones.
+- Cambiar el estado de la reparación (Recibido, En Progreso, Entregado, etc.).
+- Mantener un control claro del flujo de trabajo de las reparaciones con una base de datos embebida robusta.
 
 ## Tecnologías Utilizadas
-La aplicación está construida utilizando un stack moderno, enfocado en el rendimiento y la experiencia de usuario:
-- **Frontend**: [React](https://react.dev/) inicializado con [Vite](https://vitejs.dev/) para un desarrollo rápido.
-- **Estilos**: [Tailwind CSS](https://tailwindcss.com/) para un diseño responsivo y a medida.
-- **Iconos**: [Lucide React](https://lucide.dev/) para la iconografía de la interfaz.
-- **Backend y Base de Datos**: [Supabase](https://supabase.com/) como Backend-as-a-Service (BaaS) para la persistencia de datos y gestión en la nube.
+La aplicación fue migrada desde una arquitectura puramente web hacia una aplicación de escritorio multiplataforma utilizando:
+- **Core de Escritorio**: [Electron.js](https://www.electronjs.org/) (empaqueta Chromium y Node.js para ejecutar la interfaz nativamente).
+- **Frontend**: [React 19](https://react.dev/) y [Vite](https://vitejs.dev/) para un desarrollo extremadamente rápido.
+- **Estilos e UI**: [Tailwind CSS v4](https://tailwindcss.com/) y la iconografía de [Lucide React](https://lucide.dev/).
+- **Base de Datos (Local)**: [better-sqlite3](https://github.com/WiseLibs/better-sqlite3) (La implementación de SQLite más rápida en Node.js, almacenando los datos de forma segura dentro del sistema operativo del usuario eliminando la dependencia de servidores externos).
+- **Generación de Instaladores**: [electron-builder](https://www.electron.build/) (para generar paquetes `.deb`, `.AppImage` y `.exe`).
 
-## ¿Cómo se utiliza (Desarrollo Local)?
+---
 
-Sigue estos pasos para ejecutar el proyecto en tu entorno local:
+## 💻 Desarrollo Local
+
+Sigue estos pasos para examinar o modificar el código del proyecto:
 
 1. **Requisitos Previos**:
-   - Tener [Node.js](https://nodejs.org/) instalado.
-   - Contar con un proyecto configurado en Supabase con las tablas correspondientes.
+   - [Node.js](https://nodejs.org/) (v18 o superior).
+   - En Linux: Herramientas de compilación de C/C++ instaladas (ej. `sudo apt install build-essential python3`).
 
 2. **Instalación de Dependencias**:
-   Abre una terminal, navega a la carpeta del frontend e instala los paquetes necesarios:
+   Abre una terminal, navega a la carpeta _desktop-app_ (donde reside el proyecto) e instala los paquetes. El script `postinstall` se encargará de adaptar y compilar SQLite para Electron automáticamente:
    ```bash
-   cd frontend
+   cd desktop-app
    npm install
    ```
 
-3. **Configuración de Variables de Entorno**:
-   Crea un archivo llamado `.env` en la raíz de la carpeta `frontend` y añade tus credenciales de Supabase:
-   ```env
-   VITE_SUPABASE_URL=tu_url_de_supabase
-   VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY=tu_anon_key_de_supabase
-   ```
-
-4. **Ejecución de la Aplicación**:
-   Inicia el servidor de desarrollo:
+3. **Ejecución en Modo Desarrollo**:
    ```bash
    npm run dev
    ```
-   La aplicación estará disponible en tu navegador, generalmente en `http://localhost:5173`.
+   *Esto lanzará Vite (con hot-reload) y abrirá la ventana de Electron automáticamente. La base de datos se guardará dentro de la carpeta `%APPDATA%` (Windows) o `~/.config` (Linux) del sistema.*
+
+---
+
+## 📦 Empaquetado y Distribución (Linux y Windows)
+
+La aplicación está lista para generar instaladores independientes que no requieren Node.js ni la terminal para el usuario final. 
+
+Primero, asegúrate de estar dentro del directorio `desktop-app/` y tener todo instalado (`npm install`).
+
+### 🐧 Generar instaladores para Linux (.deb / .AppImage)
+Ejecuta el siguiente comando:
+```bash
+npm run package:linux
+```
+Los ejecutables quedarán generados en la carpeta `desktop-app/release/`.  
+
+**Opciones de ejecución en Linux:**
+- **AppImage**: Ejecutable portable. Dale permisos (`chmod +x "Gestión de Reparaciones-1.0.0.AppImage"`) y haz doble clic para usar, sin necesidad de instalación.
+- **.deb**: Instalador estándar debian/ubuntu. Puedes instalarlo con `sudo dpkg -i release/pc-repair-desktop_1.0.0_amd64.deb`. Creará el ícono y el acceso directo automáticamente en tu menú de aplicaciones con perfecta compatibilidad para Wayland y X11.
+
+### 🪟 Generar instalador para Windows (.exe)
+*(Requiere estar en Windows, o en Linux tener el paquete `wine` debidamente configurado).*
+
+Ejecuta:
+```bash
+npm run package:win
+```
+Esto creará un instalador NSIS `.exe` en la carpeta `desktop-app/release/` que puede ser distribuido e instalado en cualquier computadora con Windows con la apariencia típica del setup "Siguiente > Siguiente > Instalar".  
