@@ -14,6 +14,7 @@ import {
   AlertCircle,
   Pencil,
   Save,
+  Phone,
 } from 'lucide-react';
 import { api } from './utils/api';
 import './App.css';
@@ -29,6 +30,7 @@ const ESTADO_ORDER = ['recibida', 'progreso', 'finalizada'];
 const FORM_VACIO = {
   modelo: '',
   duenio: '',
+  telefono: '',
   sintoma: '',
   observacion: '',
   tratamiento: '',
@@ -40,6 +42,7 @@ const fromDB = (row) => ({
   id: row.id,
   modelo: row.modelo,
   duenio: row.duenio,
+  telefono: row.telefono || '',
   sintoma: row.sintoma,
   observacion: row.observacion || '',
   tratamiento: row.tratamiento || '',
@@ -120,6 +123,7 @@ function App() {
     const nuevo = {
       modelo: formData.modelo,
       duenio: formData.duenio,
+      telefono: formData.telefono,
       sintoma: formData.sintoma,
       observacion: formData.observacion,
       tratamiento: formData.tratamiento,
@@ -144,6 +148,7 @@ function App() {
     setFormData({
       modelo: rep.modelo,
       duenio: rep.duenio,
+      telefono: rep.telefono,
       sintoma: rep.sintoma,
       observacion: rep.observacion,
       tratamiento: rep.tratamiento,
@@ -159,6 +164,7 @@ function App() {
     const campos = {
       modelo: formData.modelo,
       duenio: formData.duenio,
+      telefono: formData.telefono,
       sintoma: formData.sintoma,
       observacion: formData.observacion,
       tratamiento: formData.tratamiento,
@@ -324,6 +330,15 @@ function App() {
                         </div>
                         <p className="card-field-value">{rep.duenio}</p>
                       </div>
+                      {rep.telefono && (
+                        <div className="card-field">
+                          <div className="card-field-label">
+                            <Phone size={12} />
+                            <span>Teléfono</span>
+                          </div>
+                          <p className="card-field-value">{rep.telefono}</p>
+                        </div>
+                      )}
                       <div className="card-field">
                         <div className="card-field-label">
                           <Monitor size={12} />
@@ -418,6 +433,17 @@ function App() {
                   value={formData.duenio}
                   onChange={(e) => handleInputChange('duenio', e.target.value)}
                   required
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Teléfono</label>
+                <input
+                  className="form-input"
+                  type="text"
+                  placeholder="Ej: +54 11 1234-5678"
+                  value={formData.telefono}
+                  onChange={(e) => handleInputChange('telefono', e.target.value)}
                 />
               </div>
 
