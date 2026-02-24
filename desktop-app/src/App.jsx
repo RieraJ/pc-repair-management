@@ -23,9 +23,10 @@ const COLUMNAS = [
   { id: 'recibida', titulo: 'Recibida', cssClass: 'received' },
   { id: 'progreso', titulo: 'En Progreso', cssClass: 'progress' },
   { id: 'finalizada', titulo: 'Finalizada', cssClass: 'done' },
+  { id: 'entregado', titulo: 'Entregado', cssClass: 'delivered' },
 ];
 
-const ESTADO_ORDER = ['recibida', 'progreso', 'finalizada'];
+const ESTADO_ORDER = ['recibida', 'progreso', 'finalizada', 'entregado'];
 
 const FORM_VACIO = {
   modelo: '',
@@ -494,6 +495,7 @@ function App() {
                   <option value="recibida">Recibida</option>
                   <option value="progreso">En Progreso</option>
                   <option value="finalizada">Finalizada</option>
+                  <option value="entregado">Entregado</option>
                 </select>
               </div>
 
