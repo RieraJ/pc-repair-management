@@ -15,6 +15,8 @@ import {
   Pencil,
   Save,
   Phone,
+  Calendar,
+  CheckCircle2,
 } from 'lucide-react';
 import { api } from './utils/api';
 import './App.css';
@@ -36,9 +38,9 @@ const FORM_VACIO = {
   observacion: '',
   tratamiento: '',
   estado: 'recibida',
+  fecha_entregado: '',
 };
 
-// Helper: normaliza un registro de SQLite al formato del frontend
 const fromDB = (row) => ({
   id: row.id,
   modelo: row.modelo,
@@ -49,6 +51,7 @@ const fromDB = (row) => ({
   tratamiento: row.tratamiento || '',
   estado: row.estado,
   created_at: row.created_at,
+  fecha_entregado: row.fecha_entregado,
 });
 
 function App() {
@@ -101,16 +104,21 @@ function App() {
     if (nuevoIdx < 0 || nuevoIdx >= ESTADO_ORDER.length) return;
 
     const nuevoEstado = ESTADO_ORDER[nuevoIdx];
+    const isNowEntregado = nuevoEstado === 'entregado' && rep.estado !== 'entregado';
+    // Si pasa a entregado, guarda la fecha actual (ISO) o de lo contrario mantén la que tenía. 
+    // Si la mueven de regreso, quizás quieras mantener la fecha o borrarla, según te convenga. Por ahora solo guardamos si entra.
+    const newFechaEntregado = isNowEntregado ? new Date().toISOString() : rep.fecha_entregado;
+
     const prev = reparaciones;
 
     setReparaciones((r) =>
       r.map((item) =>
-        item.id === id ? { ...item, estado: nuevoEstado } : item
+        item.id === id ? { ...item, estado: nuevoEstado, fecha_entregado: newFechaEntregado } : item
       )
     );
 
     try {
-      await api.updateReparacion(id, { estado: nuevoEstado });
+      await api.updateReparacion(id, { estado: nuevoEstado, fecha_entregado: newFechaEntregado });
     } catch (err) {
       console.error('Error al mover:', err);
       setReparaciones(prev); // rollback
@@ -129,6 +137,7 @@ function App() {
       observacion: formData.observacion,
       tratamiento: formData.tratamiento,
       estado: formData.estado,
+      fecha_entregado: formData.estado === 'entregado' ? new Date().toISOString() : null,
     };
 
     setFormData(FORM_VACIO);
@@ -154,6 +163,8 @@ function App() {
       observacion: rep.observacion,
       tratamiento: rep.tratamiento,
       estado: rep.estado,
+      // Convertir a 'yyyy-MM-dd' para el input type="date"
+      fecha_entregado: rep.fecha_entregado ? rep.fecha_entregado.split('T')[0] : '',
     });
     setModalAbierto(true);
   };
@@ -161,6 +172,20 @@ function App() {
   // ── Guardar edición ──
   const guardarEdicion = async (e) => {
     e.preventDefault();
+
+    const isNowEntregado = formData.estado === 'entregado';
+    let saveFechaEntregado = formData.fecha_entregado;
+
+    // Si está entregado y no seleccionó fecha manual en el datepicker, forzamos HOY.
+    // Si la pasa a otro estado, podríamos borrar la fecha_entregado pasándola a null.
+    if (!isNowEntregado) {
+      saveFechaEntregado = null;
+    } else if (isNowEntregado && !saveFechaEntregado) {
+      saveFechaEntregado = new Date().toISOString();
+    } else if (saveFechaEntregado && !saveFechaEntregado.includes('T')) {
+      // El input de tipo "date" devuelve 'YYYY-MM-DD'. Hay que agregarle la T de ISO para SQLite
+      saveFechaEntregado = `${saveFechaEntregado}T00:00:00.000Z`;
+    }
 
     const campos = {
       modelo: formData.modelo,
@@ -170,6 +195,7 @@ function App() {
       observacion: formData.observacion,
       tratamiento: formData.tratamiento,
       estado: formData.estado,
+      fecha_entregado: saveFechaEntregado
     };
 
     const prev = reparaciones;
@@ -342,6 +368,30 @@ function App() {
                       )}
                       <div className="card-field">
                         <div className="card-field-label">
+                          <Calendar size={12} />
+                          <span>Fecha de Ingreso</span>
+                        </div>
+                        <p className="card-field-value">
+                          {rep.created_at ? new Date(rep.created_at + 'Z').toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+                        </p>
+                      </div>
+
+                      {rep.estado === 'entregado' && (
+                        <div className="card-field">
+                          <div className="card-field-label">
+                            <CheckCircle2 size={12} />
+                            <span>Fecha Entrega</span>
+                          </div>
+                          <p className="card-field-value">
+                            {rep.fecha_entregado
+                              ? new Date(rep.fecha_entregado.endsWith('Z') ? rep.fecha_entregado : rep.fecha_entregado + 'Z').toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                              : '-'}
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="card-field">
+                        <div className="card-field-label">
                           <Monitor size={12} />
                           <span>Síntoma</span>
                         </div>
@@ -498,6 +548,18 @@ function App() {
                   <option value="entregado">Entregado</option>
                 </select>
               </div>
+
+              {formData.estado === 'entregado' && (
+                <div className="form-group">
+                  <label className="form-label">Fecha de Entrega (Opcional)</label>
+                  <input
+                    className="form-input"
+                    type="date"
+                    value={formData.fecha_entregado}
+                    onChange={(e) => handleInputChange('fecha_entregado', e.target.value)}
+                  />
+                </div>
+              )}
 
               <div className="form-actions">
                 <button

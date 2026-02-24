@@ -57,8 +57,8 @@ app.whenReady().then(() => {
 
     ipcMain.handle('add-reparacion', (_ev, reparacion) => {
         const info = db.prepare(`
-            INSERT INTO reparaciones (modelo, duenio, telefono, sintoma, observacion, tratamiento, estado)
-            VALUES (@modelo, @duenio, @telefono, @sintoma, @observacion, @tratamiento, @estado)
+            INSERT INTO reparaciones (modelo, duenio, telefono, sintoma, observacion, tratamiento, estado, fecha_entregado)
+            VALUES (@modelo, @duenio, @telefono, @sintoma, @observacion, @tratamiento, @estado, @fecha_entregado)
         `).run(reparacion);
         return db.prepare('SELECT * FROM reparaciones WHERE id = ?').get(info.lastInsertRowid);
     });
