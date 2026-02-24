@@ -19,6 +19,7 @@ function setupDatabase() {
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
             modelo      TEXT    NOT NULL,
             duenio      TEXT    NOT NULL,
+            telefono    TEXT    DEFAULT '',
             sintoma     TEXT    NOT NULL,
             observacion TEXT    DEFAULT '',
             tratamiento TEXT    DEFAULT '',
@@ -26,6 +27,13 @@ function setupDatabase() {
             created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     `);
+
+    // Migración sencilla para DBs existentes
+    try {
+        db.exec("ALTER TABLE reparaciones ADD COLUMN telefono TEXT DEFAULT ''");
+    } catch (e) {
+        // Ignorar si la columna ya existe
+    }
 
     return db;
 }
