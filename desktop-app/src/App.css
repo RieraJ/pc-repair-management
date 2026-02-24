@@ -13,6 +13,7 @@
   --accent-received: #f59e0b;
   --accent-progress: #3b82f6;
   --accent-done: #10b981;
+  --accent-delivered: #8b5cf6;
   --glass-bg: rgba(30, 41, 59, 0.7);
   --glass-border: rgba(148, 163, 184, 0.15);
   --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.3);
@@ -300,6 +301,11 @@ body {
   box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
 }
 
+.column-header--delivered {
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3);
+}
+
 .column-title {
   font-weight: 700;
   font-size: 1.05rem;
@@ -388,6 +394,10 @@ body {
 
 .repair-card--done::before {
   background: var(--accent-done);
+}
+
+.repair-card--delivered::before {
+  background: var(--accent-delivered);
 }
 
 /* Staggered animation delays */
