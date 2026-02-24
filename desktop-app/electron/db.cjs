@@ -24,16 +24,19 @@ function setupDatabase() {
             observacion TEXT    DEFAULT '',
             tratamiento TEXT    DEFAULT '',
             estado      TEXT    DEFAULT 'recibida',
-            created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+            created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+            fecha_entregado DATETIME DEFAULT NULL
         )
     `);
 
     // Migración sencilla para DBs existentes
     try {
         db.exec("ALTER TABLE reparaciones ADD COLUMN telefono TEXT DEFAULT ''");
-    } catch (e) {
-        // Ignorar si la columna ya existe
-    }
+    } catch (e) { }
+
+    try {
+        db.exec("ALTER TABLE reparaciones ADD COLUMN fecha_entregado DATETIME DEFAULT NULL");
+    } catch (e) { }
 
     return db;
 }
