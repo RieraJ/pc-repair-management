@@ -17,6 +17,7 @@ import {
   Phone,
   Calendar,
   CheckCircle2,
+  KeyRound,
 } from 'lucide-react';
 import { api } from './utils/api';
 import './App.css';
@@ -39,6 +40,7 @@ const FORM_VACIO = {
   tratamiento: '',
   estado: 'recibida',
   fecha_entregado: '',
+  password: ''
 };
 
 const fromDB = (row) => ({
@@ -52,6 +54,7 @@ const fromDB = (row) => ({
   estado: row.estado,
   created_at: row.created_at,
   fecha_entregado: row.fecha_entregado,
+  password: row.password
 });
 
 function App() {
@@ -137,6 +140,7 @@ function App() {
       observacion: formData.observacion,
       tratamiento: formData.tratamiento,
       estado: formData.estado,
+      password: formData.password,
       fecha_entregado: formData.estado === 'entregado' ? new Date().toISOString() : null,
     };
 
@@ -163,6 +167,7 @@ function App() {
       observacion: rep.observacion,
       tratamiento: rep.tratamiento,
       estado: rep.estado,
+      password: rep.password,
       // Convertir a 'yyyy-MM-dd' para el input type="date"
       fecha_entregado: rep.fecha_entregado ? rep.fecha_entregado.split('T')[0] : '',
     });
@@ -195,7 +200,8 @@ function App() {
       observacion: formData.observacion,
       tratamiento: formData.tratamiento,
       estado: formData.estado,
-      fecha_entregado: saveFechaEntregado
+      fecha_entregado: saveFechaEntregado,
+      password: formData.password
     };
 
     const prev = reparaciones;
@@ -392,6 +398,13 @@ function App() {
 
                       <div className="card-field">
                         <div className="card-field-label">
+                          <KeyRound size={12} />
+                          <span>Password</span>
+                        </div>
+                        <p className="card-field-value">{rep.password}</p>
+                      </div>
+                      <div className="card-field">
+                        <div className="card-field-label">
                           <Monitor size={12} />
                           <span>Síntoma</span>
                         </div>
@@ -495,6 +508,18 @@ function App() {
                   placeholder="Ej: +54 11 1234-5678"
                   value={formData.telefono}
                   onChange={(e) => handleInputChange('telefono', e.target.value)}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Password</label>
+                <textarea
+                  className="form-textarea"
+                  placeholder="Contraseña del equipo"
+                  value={formData.password}
+                  onChange={(e) =>
+                    handleInputChange('password', e.target.value)
+                  }
                 />
               </div>
 
