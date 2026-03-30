@@ -25,17 +25,14 @@ function setupDatabase() {
             tratamiento TEXT    DEFAULT '',
             estado      TEXT    DEFAULT 'recibida',
             created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
-            fecha_entregado DATETIME DEFAULT NULL
+            fecha_entregado DATETIME DEFAULT NULL,
+            password    TEXT    DEFAULT ''
         )
     `);
 
     // Migración sencilla para DBs existentes
     try {
-        db.exec("ALTER TABLE reparaciones ADD COLUMN telefono TEXT DEFAULT ''");
-    } catch (e) { }
-
-    try {
-        db.exec("ALTER TABLE reparaciones ADD COLUMN fecha_entregado DATETIME DEFAULT NULL");
+        db.exec("ALTER TABLE reparaciones ADD COLUMN password TEXT DEFAULT ''");
     } catch (e) { }
 
     return db;
